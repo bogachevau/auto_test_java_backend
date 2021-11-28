@@ -1,8 +1,13 @@
 package com.geekbrains.restApi.imgur;
 
+import io.restassured.builder.ResponseSpecBuilder;
+import io.restassured.specification.ResponseSpecification;
+
+import static org.hamcrest.core.Is.is;
+
 public class ImgurApiParams {
 
-    public static String TOKEN = "****************************";
+    public static String TOKEN = "5fcfba6a5ce27a9ebf76f6843d39cc248157d8bd";
     public static String URL_API = "https://api.imgur.com";
     public static String API_VERSION = "3";
     public static String USER_NAME = "alexandrbogachew";
@@ -16,5 +21,11 @@ public class ImgurApiParams {
     public static String ALBUM_HASH = "FiCKWlR";
     public static String IMAGE_DELETE_HASH = "Fgy3bEhzZDpo2Za";
     public static String ALBUM_DELETE_HASH = "4sYopnBBXfCgP8D";
+    public static String URL_ALBUM_PUT = "/album/" + ImgurApiParams.ALBUM_HASH;
 
+    public static ResponseSpecification responseSpecificationStatusDataSuccess = new ResponseSpecBuilder()
+            .expectStatusCode(200)
+            .expectBody("data", is(true))
+            .expectBody("success", is(true))
+            .build();
 }
