@@ -37,12 +37,12 @@ public class Test {
         System.out.println(productsListTitleBetween);
 
 
-        Categories categoriesCreate = new Categories();
-        categoriesCreate.setTitle("Shoes");
-
-        myBatisDbService.addCategories(categoriesCreate);
-        Categories categories = categoriesMapper.selectByPrimaryKey(3L);
-        System.out.println(categories);
+//        Categories categoriesCreate = new Categories();
+//        categoriesCreate.setTitle("Shoes");
+//
+//        myBatisDbService.addCategories(categoriesCreate);
+//        Categories categories = categoriesMapper.selectByPrimaryKey(3L);
+//        System.out.println(categories);
 
 //        Products productsCreate = Products.builder()
 //                .title("Boots")
