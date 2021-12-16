@@ -1,6 +1,10 @@
 package com.geekbrains.restApi.imgur;
 
 import io.restassured.RestAssured;
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.builder.ResponseSpecBuilder;
+import io.restassured.specification.RequestSpecification;
+import io.restassured.specification.ResponseSpecification;
 import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.given;
@@ -15,6 +19,14 @@ public class ImgurApiTests {
         RestAssured.baseURI = ImgurApiParams.URL_API + "/" + ImgurApiParams.API_VERSION;
     }
 
+    ResponseSpecification responseSpecificationBaseAccountInfo = new ResponseSpecBuilder()
+            .expectBody("success", is(true))
+            .expectBody("status", is(200))
+            .expectBody("data.bio", is("any system is vulnerable"))
+            .expectBody("data.reputation", is(0))
+            .expectStatusCode(200)
+            .build();
+
     @DisplayName("Тест на получение базовой информации об аккаунте")
     @Test
     @Order(1)
@@ -26,16 +38,20 @@ public class ImgurApiTests {
                 .log()
                 .all()
                 .expect()
-                .statusCode(is(200))
-                .body("success", is(true))
-                .body("status", is(200))
-                .body("data.bio", is("any system is vulnerable"))
-                .body("data.reputation", is(0))
+                .spec(responseSpecificationBaseAccountInfo)
                 .log()
                 .all()
                 .when()
                 .get(url);
     }
+
+    ResponseSpecification responseSpecificationImageInfo = new ResponseSpecBuilder()
+            .expectStatusCode(200)
+            .expectBody("success", is(true))
+            .expectBody("status", is(200))
+            .expectBody("data.account_id", is(156802485))
+            .expectBody("data.deletehash", is("enMuXzjUAlwX83C"))
+            .build();
 
     @DisplayName("Тест на получение информации о картинке")
     @Test
@@ -48,11 +64,7 @@ public class ImgurApiTests {
                 .log()
                 .all()
                 .expect()
-                .statusCode(is(200))
-                .body("success", is(true))
-                .body("status", is(200))
-                .body("data.account_id", is(156802485))
-                .body("data.deletehash", is("enMuXzjUAlwX83C"))
+                .spec(responseSpecificationImageInfo)
                 .log()
                 .all()
                 .when()
@@ -74,9 +86,7 @@ public class ImgurApiTests {
                 .expect()
                 .log()
                 .all()
-                .statusCode(is(200))
-                .body("data", is(true))
-                .body("success", is(true))
+                .spec(ImgurApiParams.responseSpecificationStatusDataSuccess)
                 .when()
                 .post(url);
     }
@@ -100,9 +110,34 @@ public class ImgurApiTests {
                 .get(url);
     }
 
-    @DisplayName("Тест на получение информации об альбоме")
+    @DisplayName("Тест на обновление информации об альбоме")  // Этот тест нужен чтобы следующие 2 не падали
     @Test
     @Order(5)
+    void testAlbumUpdateInfoPut() {
+        given().when()
+                .auth()
+                .oauth2(ImgurApiParams.TOKEN)
+                .log().all()
+                .formParam("title", "Warhammer 40k")
+                .formParam("description", "Testing Test")
+                .expect()
+                .log().all()
+                .spec(ImgurApiParams.responseSpecificationStatusDataSuccess)
+                .when()
+                .put(ImgurApiParams.URL_ALBUM_PUT);
+
+    }
+
+    ResponseSpecification responseSpecificationAlbumInfo = new ResponseSpecBuilder()
+            .expectStatusCode(200)
+            .expectBody("data.title", is("Warhammer 40k"))
+            .expectBody("data.images_count", is(2))
+            .expectBody("success", is(true))
+            .build();
+
+    @DisplayName("Тест на получение информации об альбоме")
+    @Test
+    @Order(6)
     void testAccountAlbumInfo() {
         String url = "/account/" + ImgurApiParams.USER_NAME + "/album/" + ImgurApiParams.ALBUM_HASH;
         given().when()
@@ -113,9 +148,7 @@ public class ImgurApiTests {
                 .expect()
                 .log()
                 .all()
-                .statusCode(is(200))
-                .body("data.title", is("Warhammer 40k"))
-                .body("data.images_count", is(2))
+                .spec(responseSpecificationAlbumInfo)
                 .body("data.deletehash", is("gjqU8ZG5a8z6XNG"))
                 .when()
                 .get(url);
@@ -123,7 +156,7 @@ public class ImgurApiTests {
 
     @DisplayName("Тест на получение информации об альбоме")
     @Test
-    @Order(6)
+    @Order(7)
     void testAlbumAlbumInfo() {
         String url = "/album/" + ImgurApiParams.ALBUM_HASH;
         given().when()
@@ -134,10 +167,7 @@ public class ImgurApiTests {
                 .expect()
                 .log()
                 .all()
-                .statusCode(is(200))
-                .body("success", is(true))
-                .body("data.title", is("Warhammer 40k"))
-                .body("data.images_count", is(2))
+                .spec(responseSpecificationAlbumInfo)
                 .body("data.id", is("FiCKWlR"))
                 .when()
                 .get(url);
@@ -145,7 +175,7 @@ public class ImgurApiTests {
 
     @DisplayName("Тест на получение информации об изображении в альбоме")
     @Test
-    @Order(7)
+    @Order(8)
     void testAlbumAlbumImage() {
         String url = "/album/" + ImgurApiParams.ALBUM_HASH + "/image/" + ImgurApiParams.IMAGE_HASH;
         given().when()
@@ -163,9 +193,14 @@ public class ImgurApiTests {
                 .get(url);
     }
 
+    RequestSpecification requestSpecificationAlbumCreation = new RequestSpecBuilder()
+            .addFormParam("ids[]", ImgurApiParams.IMAGE_HASH_2)
+            .addFormParam("ids[]", ImgurApiParams.IMAGE_HASH_3)
+            .build();
+
     @DisplayName("Тест создания нового альбома")
     @Test
-    @Order(8)
+    @Order(9)
     void testAlbumCreationPost() {
         String url = "/album";
         given().when()
@@ -173,8 +208,7 @@ public class ImgurApiTests {
                 .oauth2(ImgurApiParams.TOKEN)
                 .log()
                 .all()
-                .formParam("ids[]", ImgurApiParams.IMAGE_HASH_2)
-                .formParam("ids[]", ImgurApiParams.IMAGE_HASH_3)
+                .spec(requestSpecificationAlbumCreation)
                 .expect()
                 .log()
                 .all()
@@ -186,7 +220,7 @@ public class ImgurApiTests {
 
     @DisplayName("Тест добавления альбома в избранное")
     @Test
-    @Order(9)
+    @Order(10)
     void testAlbumFavoriteAlbumPost() {
         String url = "/album/" + ImgurApiParams.ALBUM_HASH + "/favorite";
         given().when()
@@ -205,9 +239,8 @@ public class ImgurApiTests {
 
     @DisplayName("Тест на обновление информации об альбоме")
     @Test
-    @Order(10)
+    @Order(11)
     void testAlbumUpdatePut() {
-        String url = "/album/" + ImgurApiParams.ALBUM_HASH;
         given().when()
                 .auth()
                 .oauth2(ImgurApiParams.TOKEN)
@@ -218,10 +251,8 @@ public class ImgurApiTests {
                 .expect()
                 .log()
                 .all()
-                .statusCode(is(200))
-                .body("data", is(true))
-                .body("success", is(true))
+                .spec(ImgurApiParams.responseSpecificationStatusDataSuccess)
                 .when()
-                .put(url);
+                .put(ImgurApiParams.URL_ALBUM_PUT);
     }
 }
